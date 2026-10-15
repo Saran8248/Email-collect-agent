@@ -379,3 +379,48 @@ def export_contacts_csv(db: Session = Depends(get_db)):
             "Cache-Control": "no-cache"
         }
     )
+
+@app.get("/api/export-leads.csv", tags=["Export"])
+def export_leads_csv(db: Session = Depends(get_db)):
+    """
+    Export contacts matching the exact requested lead format:
+    Name (Contact Person), Email, Company, RoleName (Job Title), Source URL.
+    """
+    contacts = db.query(Contact).order_by(desc(Contact.created_at)).all()
+
+    output = io.StringIO()
+    writer = csv.writer(output, quoting=csv.QUOTE_MINIMAL)
+
+    # Lead Format Header
+    writer.writerow([
+        "Name",
+        "Email",
+        "Company",
+        "RoleName",
+        "Source URL",
+        "Verification Status",
+        "Type"
+    ])
+
+    for c in contacts:
+        writer.writerow([
+            c.contact_name or "Not Specified",
+            c.email_normalized,
+            c.company_name or "Not Specified",
+            c.job_title or "Not Specified",
+            c.source_url,
+            c.verification_status,
+            c.email_type
+        ])
+
+    csv_content = output.getvalue()
+    output.close()
+
+    return Response(
+        content=csv_content,
+        media_type="text/csv",
+        headers={
+            "Content-Disposition": "attachment; filename=hr_leads_export.csv",
+            "Cache-Control": "no-cache"
+        }
+    )

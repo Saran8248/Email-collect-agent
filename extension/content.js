@@ -38,6 +38,59 @@
   }
 
   /**
+   * Automatically expand "See more", "Show more", "Read more" buttons
+   * commonly found on Indeed, StepStone, and other job portals to reveal
+   * the full description and hidden HR contact details.
+   */
+  async function expandHiddenContent() {
+    const expandSelectors = [
+      '#viewJobSSRRoot button',
+      '[data-testid="viewJob-description-show-more"]',
+      'button[aria-expanded="false"]',
+      'button[class*="showMore"]',
+      'button[class*="show-more"]',
+      'button[class*="ShowMore"]',
+      'button[id*="showMore"]',
+      '.jobsearch-JobComponent-description-toggle',
+      'button[data-testid*="show-more"]'
+    ];
+
+    // Click targeted selector buttons
+    for (const sel of expandSelectors) {
+      const elements = document.querySelectorAll(sel);
+      for (const el of elements) {
+        try {
+          el.click();
+        } catch (e) {}
+      }
+    }
+
+    // Click buttons and links by text content
+    const clickables = document.querySelectorAll("button, a, [role='button'], summary");
+    for (const el of clickables) {
+      const text = (el.innerText || el.textContent || "").trim().toLowerCase();
+      if (
+        text === "show more" ||
+        text === "see more" ||
+        text === "read more" ||
+        text === "view full job description" ||
+        text.includes("view full description") ||
+        text.includes("read full description") ||
+        text === "show full description" ||
+        text === "mehr anzeigen" ||
+        text === "mehr lesen"
+      ) {
+        try {
+          el.click();
+        } catch (e) {}
+      }
+    }
+
+    // Wait 150ms for DOM expansion
+    await new Promise(r => setTimeout(r, 150));
+  }
+
+  /**
    * Extract JSON-LD JobPosting metadata if available
    */
   function extractJsonLd() {
@@ -63,7 +116,7 @@
   }
 
   /**
-   * Infer Job Title using DOM selectors, meta tags, and heuristics
+   * Infer Job Title / Role Name using DOM selectors, meta tags, and heuristics
    */
   function extractJobTitle(jsonLd) {
     if (jsonLd.title && jsonLd.title.trim()) {
@@ -71,10 +124,14 @@
     }
 
     const titleSelectors = [
+      '[data-testid="jobsearch-JobInfoHeader-title"]',
+      'h1.jobsearch-JobInfoHeader-title',
+      'h1[class*="jobsearch-JobInfoHeader-title"]',
       '[data-qa="job-title"]',
       '.jobsearch-JobInfoHeader-title',
       '.job-title',
-      '[class*="job-title"]',
+      'h1[class*="jobTitle"]',
+      'h2.jobTitle',
       '[class*="JobHeader-title"]',
       '[itemprop="title"]',
       'h1'
@@ -108,11 +165,16 @@
     }
 
     const companySelectors = [
-      '[data-qa="company-name"]',
+      '[data-testid="inlineHeader-companyName"]',
+      '[data-testid="company-name"]',
+      '[data-company-name="true"]',
+      '.jobsearch-CompanyInfoContainer a',
+      '.jobsearch-InlineCompanyRating div a',
       '.jobsearch-InlineCompanyRating div',
+      '.companyName',
+      '[data-qa="company-name"]',
       '.company-name',
       '[class*="company-name"]',
-      '[data-company-name="true"]',
       '[itemprop="hiringOrganization"]',
       '[class*="employer"]',
       '[class*="Employer"]',
@@ -149,20 +211,20 @@
   }
 
   /**
-   * Detect Contact Person Name using German & English recruiting labels
+   * Detect Contact Person / Recruiter Name using recruiting labels & honorifics
    */
   function extractContactName() {
     const labelPatterns = [
+      /(?:posted\s+by(?:\s+recruiter)?|hiring\s+manager|job\s+poster|recruiter|hr\s+executive|talent\s+acquisition|hr\s+manager)\s*[:\-]?\s*([A-Za-zÄÖÜäöüß.\s]{3,40})/i,
+      /(?:contact\s*(?:person)?|reach\s+out\s+to|queries\s+to|send\s+(?:your\s+)?(?:resume|cv)\s+to)\s*[:\-]?\s*([A-Za-zÄÖÜäöüß.\s]{3,40})/i,
       /(?:ihr(?:e)?\s+)?ansprechpartner(?:in)?\s*[:\-]?\s*([A-Za-zÄÖÜäöüß.\s]{3,40})/i,
       /(?:ihr(?:e)?\s+)?kontakt(?:person)?\s*[:\-]?\s*([A-Za-zÄÖÜäöüß.\s]{3,40})/i,
       /bewerbung(?:en)?\s+an\s*[:\-]?\s*([A-Za-zÄÖÜäöüß.\s]{3,40})/i,
-      /zuständig(?:er|e)?\s*[:\-]?\s*([A-Za-zÄÖÜäöüß.\s]{3,40})/i,
-      /recruiter\s*[:\-]?\s*([A-Za-zÄÖÜäöüß.\s]{3,40})/i,
-      /contact\s*(?:person)?\s*[:\-]?\s*([A-Za-zÄÖÜäöüß.\s]{3,40})/i
+      /zuständig(?:er|e)?\s*[:\-]?\s*([A-Za-zÄÖÜäöüß.\s]{3,40})/i
     ];
 
-    // German honorific pattern
-    const honorificPattern = /(?:Frau|Herr|Dr\.|Prof\.)\s+[A-ZÄÖÜ][a-zäöüß]+\s+[A-ZÄÖÜ][a-zäöüß]+/g;
+    // English and German honorific patterns
+    const honorificPattern = /(?:Mr\.|Mrs\.|Ms\.|Frau|Herr|Dr\.|Prof\.)\s+[A-ZÄÖÜ][a-zäöüß]+\s+[A-ZÄÖÜ][a-zäöüß]+/g;
 
     const bodyText = document.body ? document.body.innerText : "";
 
@@ -170,8 +232,8 @@
       const match = bodyText.match(pat);
       if (match && match[1]) {
         let name = match[1].trim().split("\n")[0].split(",")[0].trim();
-        name = name.replace(/^(Frau|Herr|Dr\.|Prof\.)\s*/, "$1 ");
-        if (name.length > 3 && name.length < 50 && !name.toLowerCase().includes("email")) {
+        name = name.replace(/^(Mr\.|Mrs\.|Ms\.|Frau|Herr|Dr\.|Prof\.)\s*/i, "$1 ");
+        if (name.length > 2 && name.length < 50 && !name.toLowerCase().includes("email") && !name.toLowerCase().includes("http")) {
           return name;
         }
       }
@@ -259,12 +321,11 @@
     for (const ext of INVALID_EXTENSIONS) {
       if (email.endsWith(ext)) return false;
     }
-    // Simple structural regex
     const validPattern = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,7}$/;
     if (!validPattern.test(email)) return false;
 
     // Skip generic placeholder emails
-    const placeholders = ["yourname@domain.com", "email@example.com", "name@domain.de", "test@test.de"];
+    const placeholders = ["yourname@domain.com", "email@example.com", "name@domain.de", "test@test.de", "test@domain.com"];
     if (placeholders.includes(email.toLowerCase())) return false;
 
     return true;
@@ -284,16 +345,33 @@
   }
 
   /**
-   * Find matching same-origin links relevant to job / career listings
+   * Find matching same-origin links relevant to job / career listings.
+   * Includes specific Indeed job key (jk) card extraction.
    */
   function extractSameOriginLinks() {
     const currentOrigin = window.location.origin;
     const linksSet = new Set();
-    const allAnchors = document.querySelectorAll("a[href]");
 
+    // 1. Indeed-specific: detect individual job cards (data-jk, job_*, /viewjob, /rc/clk)
+    const indeedCards = document.querySelectorAll("[data-jk], a[href*='jk='], a.jcs-JobTitle, a[id^='job_']");
+    for (const card of indeedCards) {
+      let jk = card.getAttribute("data-jk");
+      if (!jk && card.getAttribute("href")) {
+        try {
+          const u = new URL(card.getAttribute("href"), window.location.href);
+          jk = u.searchParams.get("jk");
+        } catch (e) {}
+      }
+      if (jk && /^[a-zA-Z0-9]+$/.test(jk)) {
+        linksSet.add(`${currentOrigin}/viewjob?jk=${jk}`);
+      }
+    }
+
+    // 2. Scan all standard same-origin job links
+    const allAnchors = document.querySelectorAll("a[href]");
     const jobKeywords = [
       "job", "stellenangebot", "karriere", "career", "position",
-      "detail", "angebot", "kontakt", "recruiting", "work-with-us"
+      "detail", "angebot", "kontakt", "recruiting", "work-with-us", "viewjob"
     ];
 
     for (const a of allAnchors) {
@@ -324,8 +402,9 @@
 
   /**
    * Execute full page extraction
+   * Automatically expands hidden "See more" text first
    */
-  function analyzeCurrentPage() {
+  async function analyzeCurrentPage() {
     const compliance = checkComplianceRestrictions();
     if (compliance.blocked) {
       return {
@@ -336,6 +415,9 @@
         domain: window.location.hostname
       };
     }
+
+    // Expand hidden "See more" / "Show more" accordion before reading DOM
+    await expandHiddenContent();
 
     const jsonLd = extractJsonLd();
     const jobTitle = extractJobTitle(jsonLd);
@@ -368,8 +450,7 @@
   // Listen for messages from popup or background script
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === "EXTRACT_PAGE" || request.action === "ANALYZE_PAGE") {
-      const result = analyzeCurrentPage();
-      sendResponse(result);
+      analyzeCurrentPage().then(result => sendResponse(result));
     }
     return true; // Keep message channel open for async response
   });

@@ -108,3 +108,12 @@ def test_export_csv():
     content = res.text
     assert "ID,Company Name,Contact Person,Job Title,Email" in content
     assert "karriere@techcorp.de" in content
+
+def test_export_leads_csv():
+    res = client.get("/api/export-leads.csv")
+    assert res.status_code == 200
+    assert res.headers["content-type"].startswith("text/csv")
+    assert "hr_leads_export.csv" in res.headers["content-disposition"]
+    content = res.text
+    assert "Name,Email,Company,RoleName" in content
+    assert "karriere@techcorp.de" in content

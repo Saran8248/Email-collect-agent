@@ -156,13 +156,20 @@ def clean_contact_name(name_raw: Optional[str]) -> Optional[str]:
     
     # Remove leading label keywords
     prefixes = [
+        r"^posted\s+by(?:\s+recruiter)?\s*[:\-]?\s*",
+        r"^hiring\s+manager\s*[:\-]?\s*",
+        r"^job\s+poster\s*[:\-]?\s*",
+        r"^talent\s+acquisition\s*[:\-]?\s*",
+        r"^hr\s+executive\s*[:\-]?\s*",
+        r"^hr\s+manager\s*[:\-]?\s*",
+        r"^recruiter\s*[:\-]?\s*",
+        r"^contact\s*(?:person)?\s*[:\-]?\s*",
+        r"^reach\s+out\s+to\s*[:\-]?\s*",
+        r"^queries\s+to\s*[:\-]?\s*",
         r"^(?:ihr(?:e)?\s+)?ansprechpartner(?:in)?\s*[:\-]?\s*",
         r"^(?:ihr(?:e)?\s+)?kontakt(?:person)?\s*[:\-]?\s*",
         r"^zuständig(?:er|e)?\s*[:\-]?\s*",
-        r"^bewerbung(?:en)?\s+an\s*[:\-]?\s*",
-        r"^contact\s*(?:person)?\s*[:\-]?\s*",
-        r"^recruiter\s*[:\-]?\s*",
-        r"^hr\s+manager\s*[:\-]?\s*"
+        r"^bewerbung(?:en)?\s+an\s*[:\-]?\s*"
     ]
     for pattern in prefixes:
         cleaned = re.sub(pattern, "", cleaned, flags=re.IGNORECASE).strip()

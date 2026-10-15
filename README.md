@@ -147,14 +147,14 @@ Open your browser to:
 
 ---
 
-## 6. Controls & Limitations
+## 6. Controls, Heuristics & Indeed Automation
 
+- **Automatic "See More" Expansion:** On job boards like Indeed, full job descriptions and recruiter contact details are often hidden under buttons like "See more", "Show more", or "View full description". The extension automatically detects and clicks these accordions before analyzing text.
+- **Indeed Job Card Crawler:** On Indeed search or category pages (e.g. `indeed.com/jobs?q=...` or "Browse top-paying jobs by industry"), the extension identifies individual job cards via their job keys (`jk`) and directly visits each standalone posting (`/viewjob?jk=...`) one by one.
+- **HR & Recruiter Detection:** Extracts the person who posted the job (`Posted by`, `Hiring Manager`, `Recruiter`, `HR Contact`, `Ansprechpartner`), company name, role name, and published email.
 - **Bounded Same-Origin Navigation:** The crawler is limited to the current website origin. It visits unvisited links adhering to your configured page limit (default: 5) and inter-page delay (default: 2000 ms).
-- **Tab Dedication:** The active browser tab navigates as the worker crawls pages. Do not use that tab for manual browsing while a crawl is in progress.
 - **Run Controls:** You can **Pause**, **Resume**, or **Stop** an ongoing crawl at any time from the extension popup.
-- **German Portal Heuristics:** Contact extraction uses specialized heuristics for German recruiting patterns (`Ansprechpartner`, `Kontaktperson`, `Frau/Herr`, `Bewerbung an`, `Karriere`).
 - **Compliance Rules:** LinkedIn automated collection is intentionally disabled.
-- **Email Validation:** Email syntax is normalized and validated against standard email format rules. This does not perform intrusive mailbox pinging or email dispatch.
 
 ---
 
@@ -165,7 +165,8 @@ Open your browser to:
 | **Review Dashboard** | [http://127.0.0.1:8080](http://127.0.0.1:8080) |
 | **API Health Check** | [http://127.0.0.1:8000/health](http://127.0.0.1:8000/health) |
 | **API Swagger Docs** | [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs) |
-| **CSV Export** | [http://127.0.0.1:8000/api/export.csv](http://127.0.0.1:8000/api/export.csv) |
+| **Leads CSV Export (Name, Email, Company, RoleName)** | [http://127.0.0.1:8000/api/export-leads.csv](http://127.0.0.1:8000/api/export-leads.csv) |
+| **Full Contacts CSV Export** | [http://127.0.0.1:8000/api/export.csv](http://127.0.0.1:8000/api/export.csv) |
 | **Chrome Extensions** | `chrome://extensions` |
 
 ---
@@ -177,4 +178,4 @@ Run the test suite using pytest:
 $env:PYTHONPATH="backend"
 .\.venv\Scripts\pytest backend/tests -v
 ```
-All 11 unit and integration tests verify email normalization, generic inbox heuristics, contact deduplication, CRUD API routes, metrics computation, and CSV streaming.
+All 12 unit and integration tests verify email normalization, generic inbox heuristics, contact deduplication, CRUD API routes, metrics computation, and CSV streaming.

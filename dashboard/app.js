@@ -294,23 +294,13 @@ function renderTable(contacts) {
     tdAudit.appendChild(chkReviewed);
     tr.appendChild(tdAudit);
 
-    // 2. Company Name
-    const tdCompany = document.createElement("td");
-    tdCompany.textContent = c.company_name || "—";
-    tdCompany.style.fontWeight = "600";
-    tr.appendChild(tdCompany);
-
-    // 3. Contact Person
+    // 2. Contact Person / Name
     const tdContact = document.createElement("td");
     tdContact.textContent = c.contact_name || "—";
+    tdContact.style.fontWeight = "600";
     tr.appendChild(tdContact);
 
-    // 4. Job Title
-    const tdTitle = document.createElement("td");
-    tdTitle.textContent = c.job_title || "—";
-    tr.appendChild(tdTitle);
-
-    // 5. Email Address with Copy Button
+    // 3. Email Address with Copy Button
     const tdEmail = document.createElement("td");
     tdEmail.innerHTML = `
       <div class="email-cell">
@@ -319,6 +309,16 @@ function renderTable(contacts) {
       </div>
     `;
     tr.appendChild(tdEmail);
+
+    // 4. Company Name
+    const tdCompany = document.createElement("td");
+    tdCompany.textContent = c.company_name || "—";
+    tr.appendChild(tdCompany);
+
+    // 5. Job Title / Role
+    const tdTitle = document.createElement("td");
+    tdTitle.textContent = c.job_title || "—";
+    tr.appendChild(tdTitle);
 
     // 6. Email Type
     const tdType = document.createElement("td");

@@ -32,8 +32,12 @@
           <span class="icon">🔄</span> Refresh
         </button>
 
-        <a id="btnExportCsv" href="http://127.0.0.1:8000/api/export.csv" download="hr_contacts_export.csv" class="btn btn-success" title="Download all contacts as CSV">
-          <span class="icon">📥</span> Export CSV
+        <a id="btnExportLeadsCsv" href="http://127.0.0.1:8000/api/export-leads.csv" download="hr_leads_export.csv" class="btn btn-success" title="Download formatted leads CSV (Name, Email, Company, RoleName)">
+          <span class="icon">📥</span> Export Leads CSV
+        </a>
+
+        <a id="btnExportCsv" href="http://127.0.0.1:8000/api/export.csv" download="hr_contacts_export.csv" class="btn btn-outline" title="Download all contact records and audit history">
+          <span class="icon">📑</span> Full CSV
         </a>
 
         <button id="btnNewContact" class="btn btn-primary" title="Add manual contact entry">
@@ -184,13 +188,13 @@
             <thead>
               <tr>
                 <th style="width: 50px;">Audit</th>
-                <th>Company</th>
-                <th>Contact Person</th>
-                <th>Job Title</th>
+                <th>Name (Contact / Poster)</th>
                 <th>Email Address</th>
-                <th>Type</th>
+                <th>Company</th>
+                <th>Role (Job Title)</th>
+                <th>Inbox Type</th>
                 <th>Verification</th>
-                <th>Source Domain</th>
+                <th>Source Portal</th>
                 <th>Notes</th>
                 <th style="width: 100px; text-align: right;">Actions</th>
               </tr>
