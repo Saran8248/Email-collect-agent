@@ -9,10 +9,13 @@ logger = logging.getLogger("hr_contact_agent.database")
 # Load environment variables
 load_dotenv()
 
-DEFAULT_DB_URL = "postgresql://postgres:postgres@127.0.0.1:5432/hr_contacts"
+DEFAULT_DB_URL = "postgresql+psycopg2://postgres:postgres@127.0.0.1:5432/hr_contacts"
 SQLITE_FALLBACK_URL = "sqlite:///./hr_contacts.db"
 
 DATABASE_URL = os.getenv("DATABASE_URL", DEFAULT_DB_URL).strip()
+# Ensure dialect driver compatibility for SQLAlchemy 2.0
+if DATABASE_URL.startswith("postgresql://"):
+    DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+psycopg2://", 1)
 
 def create_db_engine(url: str):
     connect_args = {}

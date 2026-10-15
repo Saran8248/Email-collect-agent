@@ -28,13 +28,26 @@ from .collector import (
     clean_contact_name
 )
 
+from contextlib import asynccontextmanager
+
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger("hr_contact_agent.api")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Initialize database tables on service startup."""
+    try:
+        init_db()
+        logger.info("Database schema verified and ready.")
+    except Exception as e:
+        logger.error(f"Error during database initialization: {e}")
+    yield
 
 app = FastAPI(
     title="HR Contact Collection Agent API",
     description="FastAPI service for collecting, deduplicating, reviewing, and exporting HR contacts.",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan
 )
 
 # Enable CORS for Chrome Extension, Dashboard (port 8080), and local origins
@@ -45,15 +58,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-@app.on_event("startup")
-def on_startup():
-    """Initialize database tables on service startup."""
-    try:
-        init_db()
-        logger.info("Database schema verified and ready.")
-    except Exception as e:
-        logger.error(f"Error during database initialization: {e}")
 
 @app.get("/health", response_model=HealthResponse, tags=["Health"])
 def health_check():

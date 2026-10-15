@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HR Contact Collection Agent</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup-container">
+    <!-- Header -->
+    <header class="popup-header">
+      <div class="brand">
+        <div class="brand-icon">HR</div>
+        <div>
+          <h1 class="brand-title">HR Contact Agent</h1>
+          <span class="brand-subtitle">Job Portal Extractor</span>
+        </div>
+      </div>
+      <div id="apiStatusBadge" class="status-badge status-checking">
+        <span class="status-dot"></span>
+        <span id="apiStatusText">Checking API...</span>
+      </div>
+    </header>
+
+    <!-- Active Tab Info -->
+    <div class="tab-info-card">
+      <div class="tab-meta">
+        <span class="tab-label">Target Page:</span>
+        <span id="currentDomain" class="tab-domain">Loading...</span>
+      </div>
+      <div id="currentUrl" class="tab-url-text">Detecting active page...</div>
+    </div>
+
+    <!-- Compliance / Warning Alert -->
+    <div id="complianceNotice" class="alert-box alert-warning hidden">
+      <span class="alert-icon">⚠️</span>
+      <span id="complianceText">LinkedIn automated collection is disabled per compliance rules.</span>
+    </div>
+
+    <!-- Tab Navigation -->
+    <div class="nav-tabs">
+      <button id="tabBtnAnalyze" class="nav-tab active">Current Page</button>
+      <button id="tabBtnCrawler" class="nav-tab">Bounded Crawler</button>
+    </div>
+
+    <!-- Section 1: Current Page Analysis -->
+    <div id="viewAnalyze" class="tab-content active">
+      <div class="action-bar">
+        <button id="btnAnalyze" class="btn btn-primary btn-full">
+          <span class="btn-icon">🔍</span> Analyze Current Page
+        </button>
+      </div>
+
+      <!-- Loading Spinner -->
+      <div id="analyzeLoading" class="loading-state hidden">
+        <div class="spinner"></div>
+        <p>Extracting company, contacts & emails...</p>
+      </div>
+
+      <!-- Preview Card -->
+      <div id="previewCard" class="preview-card hidden">
+        <div class="preview-header">
+          <h2 class="preview-title">Extraction Preview</h2>
+          <span id="emailCountBadge" class="badge">0 emails</span>
+        </div>
+
+        <div class="form-group">
+          <label>Job Title</label>
+          <input type="text" id="previewJobTitle" class="form-input" placeholder="Not detected">
+        </div>
+
+        <div class="form-group">
+          <label>Company Name</label>
+          <input type="text" id="previewCompanyName" class="form-input" placeholder="Not detected">
+        </div>
+
+        <div class="form-group">
+          <label>Contact Person</label>
+          <input type="text" id="previewContactName" class="form-input" placeholder="No explicit contact label found">
+        </div>
+
+        <div class="form-group">
+          <label>Discovered Emails</label>
+          <div id="emailsList" class="emails-list">
+            <div class="empty-state">No published emails found on this page.</div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Same-Origin Job Links Found</label>
+          <span id="previewLinksCount" class="links-count-pill">0 relevant links</span>
+        </div>
+
+        <div class="preview-actions">
+          <button id="btnSavePreview" class="btn btn-success btn-full" disabled>
+            💾 Save to Database
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 2: Bounded Crawler -->
+    <div id="viewCrawler" class="tab-content">
+      <div class="crawler-settings">
+        <div class="grid-2">
+          <div class="form-group">
+            <label for="crawlMaxPages">Max Pages</label>
+            <input type="number" id="crawlMaxPages" class="form-input" value="5" min="1" max="50">
+          </div>
+          <div class="form-group">
+            <label for="crawlDelay">Delay (ms)</label>
+            <input type="number" id="crawlDelay" class="form-input" value="2000" min="500" max="10000" step="500">
+          </div>
+        </div>
+
+        <div class="crawler-status-box">
+          <div class="status-row">
+            <span class="status-label">Crawler Status:</span>
+            <span id="crawlStatusBadge" class="status-pill pill-idle">Idle</span>
+          </div>
+
+          <div class="progress-bar-container">
+            <div id="crawlProgressBar" class="progress-bar-fill" style="width: 0%"></div>
+          </div>
+
+          <div class="crawler-stats-grid">
+            <div class="stat-item">
+              <span class="stat-number" id="statPagesVisited">0</span>
+              <span class="stat-label">Pages Visited</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-number" id="statContactsFound">0</span>
+              <span class="stat-label">Contacts Saved</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-number" id="statQueueCount">0</span>
+              <span class="stat-label">In Queue</span>
+            </div>
+          </div>
+
+          <div id="crawlerCurrentUrl" class="crawler-current-url">Waiting to start...</div>
+        </div>
+
+        <!-- Crawler Controls -->
+        <div class="crawler-controls">
+          <button id="btnStartCrawl" class="btn btn-primary">▶ Start Crawl</button>
+          <button id="btnPauseCrawl" class="btn btn-warning" disabled>⏸ Pause</button>
+          <button id="btnResumeCrawl" class="btn btn-secondary" disabled>⏯ Resume</button>
+          <button id="btnStopCrawl" class="btn btn-danger" disabled>⏹ Stop</button>
+        </div>
+        <p class="crawler-tip">
+          ℹ The active tab navigates as pages are crawled. Keep this window and tab open during collection.
+        </p>
+      </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast hidden"></div>
+
+    <!-- Quick Footer Links -->
+    <footer class="popup-footer">
+      <a href="http://127.0.0.1:8080" target="_blank" class="footer-link">📊 Open Dashboard</a>
+      <a href="http://127.0.0.1:8000/api/export.csv" target="_blank" class="footer-link">📥 Export CSV</a>
+      <a href="http://127.0.0.1:8000/docs" target="_blank" class="footer-link">📚 API Docs</a>
+    </footer>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

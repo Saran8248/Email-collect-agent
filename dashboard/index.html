@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HR Contact Collection Agent - Review Dashboard</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Top Navigation Bar -->
+    <header class="navbar">
+      <div class="nav-brand">
+        <div class="brand-logo">HR</div>
+        <div>
+          <h1 class="brand-name">HR Contact Collection Agent</h1>
+          <p class="brand-sub">Lead Review, Verification & Export Dashboard</p>
+        </div>
+      </div>
+
+      <div class="nav-actions">
+        <!-- Live API Status Indicator -->
+        <div id="apiStatusBadge" class="status-indicator status-checking">
+          <span class="status-dot"></span>
+          <span id="apiStatusText">Checking Backend API...</span>
+        </div>
+
+        <button id="btnRefresh" class="btn btn-outline" title="Refresh records and metrics">
+          <span class="icon">🔄</span> Refresh
+        </button>
+
+        <a id="btnExportCsv" href="http://127.0.0.1:8000/api/export.csv" download="hr_contacts_export.csv" class="btn btn-success" title="Download all contacts as CSV">
+          <span class="icon">📥</span> Export CSV
+        </a>
+
+        <button id="btnNewContact" class="btn btn-primary" title="Add manual contact entry">
+          <span class="icon">➕</span> Add Contact
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Summary Metrics Grid -->
+      <section class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-meta">
+            <span class="stat-label">Total Contacts</span>
+            <span class="stat-icon-wrap bg-blue">👥</span>
+          </div>
+          <div class="stat-value" id="statTotal">0</div>
+          <span class="stat-desc">All collected contacts</span>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-meta">
+            <span class="stat-label">Verified</span>
+            <span class="stat-icon-wrap bg-green">✅</span>
+          </div>
+          <div class="stat-value" id="statVerified">0</div>
+          <span class="stat-desc">Manually or rule verified</span>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-meta">
+            <span class="stat-label">Unverified</span>
+            <span class="stat-icon-wrap bg-amber">⏳</span>
+          </div>
+          <div class="stat-value" id="statUnverified">0</div>
+          <span class="stat-desc">Pending review</span>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-meta">
+            <span class="stat-label">Generic Inboxes</span>
+            <span class="stat-icon-wrap bg-purple">📫</span>
+          </div>
+          <div class="stat-value" id="statGeneric">0</div>
+          <span class="stat-desc">info@, karriere@, jobs@, etc.</span>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-meta">
+            <span class="stat-label">Person / Specific</span>
+            <span class="stat-icon-wrap bg-cyan">👤</span>
+          </div>
+          <div class="stat-value" id="statPerson">0</div>
+          <span class="stat-desc">Named HR contacts</span>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-meta">
+            <span class="stat-label">Reviewed</span>
+            <span class="stat-icon-wrap bg-emerald">📝</span>
+          </div>
+          <div class="stat-value" id="statReviewed">0</div>
+          <span class="stat-desc">Human audited records</span>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-meta">
+            <span class="stat-label">Source Portals</span>
+            <span class="stat-icon-wrap bg-indigo">🌐</span>
+          </div>
+          <div class="stat-value" id="statDomains">0</div>
+          <span class="stat-desc">Unique job platforms</span>
+        </div>
+      </section>
+
+      <!-- Filter & Search Toolbar -->
+      <section class="filter-panel">
+        <div class="search-wrap">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="searchInput" class="search-input" placeholder="Search by company, contact person, job title, email, notes...">
+        </div>
+
+        <div class="filter-controls">
+          <div class="filter-group">
+            <label for="filterStatus">Status</label>
+            <select id="filterStatus" class="filter-select">
+              <option value="">All Statuses</option>
+              <option value="unverified">Unverified</option>
+              <option value="verified">Verified</option>
+              <option value="invalid">Invalid</option>
+              <option value="not_found">Not Found</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label for="filterType">Inbox Type</label>
+            <select id="filterType" class="filter-select">
+              <option value="">All Types</option>
+              <option value="generic">Generic Inbox</option>
+              <option value="person_or_other">Person / Other</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label for="filterReviewed">Audit</label>
+            <select id="filterReviewed" class="filter-select">
+              <option value="">All</option>
+              <option value="true">Reviewed Only</option>
+              <option value="false">Needs Review</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label for="filterDomain">Source Domain</label>
+            <select id="filterDomain" class="filter-select">
+              <option value="">All Domains</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label for="sortBy">Sort By</label>
+            <select id="sortBy" class="filter-select">
+              <option value="created_at-desc">Newest First</option>
+              <option value="created_at-asc">Oldest First</option>
+              <option value="company_name-asc">Company (A-Z)</option>
+              <option value="email-asc">Email (A-Z)</option>
+            </select>
+          </div>
+
+          <div class="filter-actions">
+            <button id="btnResetFilters" class="btn btn-ghost" title="Reset all search filters">
+              Reset
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Table Section -->
+      <section class="table-container">
+        <div class="table-header-meta">
+          <h2 class="table-title">Contacts Directory</h2>
+          <span id="tableSummary" class="table-count-label">Showing 0 contacts</span>
+        </div>
+
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th style="width: 50px;">Audit</th>
+                <th>Company</th>
+                <th>Contact Person</th>
+                <th>Job Title</th>
+                <th>Email Address</th>
+                <th>Type</th>
+                <th>Verification</th>
+                <th>Source Domain</th>
+                <th>Notes</th>
+                <th style="width: 100px; text-align: right;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="contactsTableBody">
+              <!-- Dynamically populated via app.js -->
+              <tr>
+                <td colspan="10" class="table-loading">
+                  <div class="spinner"></div> Loading contacts...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination Controls -->
+        <div class="pagination-footer">
+          <div class="page-size-selector">
+            <label for="pageSizeSelect">Show:</label>
+            <select id="pageSizeSelect" class="page-select">
+              <option value="10">10</option>
+              <option value="25" selected>25</option>
+              <option value="50">50</option>
+              <option value="100">100</option>
+            </select>
+            <span class="page-meta-text">per page</span>
+          </div>
+
+          <div class="page-nav">
+            <button id="btnPrevPage" class="btn btn-outline btn-sm" disabled>Previous</button>
+            <span id="pageIndicator" class="page-indicator">Page 1 of 1</span>
+            <button id="btnNextPage" class="btn btn-outline btn-sm" disabled>Next</button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Modal: Add or Edit Contact -->
+    <div id="contactModal" class="modal-backdrop hidden">
+      <div class="modal-dialog">
+        <div class="modal-header">
+          <h3 id="modalTitle" class="modal-title">Edit Contact</h3>
+          <button id="btnCloseModal" class="modal-close">&times;</button>
+        </div>
+        <form id="contactForm" class="modal-form">
+          <input type="hidden" id="modalContactId">
+
+          <div class="form-grid">
+            <div class="form-group full-width">
+              <label for="modalEmail">Email Address *</label>
+              <input type="email" id="modalEmail" class="form-control" required placeholder="recruiting@example.de">
+            </div>
+
+            <div class="form-group">
+              <label for="modalCompany">Company Name</label>
+              <input type="text" id="modalCompany" class="form-control" placeholder="Company GmbH">
+            </div>
+
+            <div class="form-group">
+              <label for="modalContactPerson">Contact Person</label>
+              <input type="text" id="modalContactPerson" class="form-control" placeholder="Frau Anna Schmidt">
+            </div>
+
+            <div class="form-group">
+              <label for="modalJobTitle">Job Title</label>
+              <input type="text" id="modalJobTitle" class="form-control" placeholder="Software Engineer">
+            </div>
+
+            <div class="form-group">
+              <label for="modalSourceDomain">Source Domain</label>
+              <input type="text" id="modalSourceDomain" class="form-control" placeholder="stepstone.de">
+            </div>
+
+            <div class="form-group full-width">
+              <label for="modalSourceUrl">Source URL *</label>
+              <input type="url" id="modalSourceUrl" class="form-control" required placeholder="https://example.de/job/123">
+            </div>
+
+            <div class="form-group">
+              <label for="modalStatus">Verification Status</label>
+              <select id="modalStatus" class="form-control">
+                <option value="unverified">Unverified</option>
+                <option value="verified">Verified</option>
+                <option value="invalid">Invalid</option>
+                <option value="not_found">Not Found</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="modalEmailType">Email Classification</label>
+              <select id="modalEmailType" class="form-control">
+                <option value="generic">Generic Inbox</option>
+                <option value="person_or_other">Person / Specific</option>
+              </select>
+            </div>
+
+            <div class="form-group full-width checkbox-row">
+              <label class="checkbox-label">
+                <input type="checkbox" id="modalReviewed">
+                <span>Mark as Human Reviewed</span>
+              </label>
+            </div>
+
+            <div class="form-group full-width">
+              <label for="modalNotes">Review Notes</label>
+              <textarea id="modalNotes" class="form-control" rows="3" placeholder="Enter notes or audit findings..."></textarea>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" id="btnCancelModal" class="btn btn-outline">Cancel</button>
+            <button type="submit" id="btnSaveModal" class="btn btn-primary">Save Changes</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast hidden"></div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
