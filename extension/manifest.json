@@ -1,0 +1,23 @@
+{
+  "manifest_version": 3,
+  "name": "HR Contact Collection Agent",
+  "version": "1.0.0",
+  "description": "Collects publicly displayed company and HR contact details from permitted German job portals, deduplicates records, and syncs to backend.",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "tabs",
+    "scripting"
+  ],
+  "host_permissions": [
+    "http://127.0.0.1:8000/*",
+    "http://localhost:8000/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "HR Contact Collection Agent"
+  },
+  "background": {
+    "service_worker": "background.js"
+  }
+}
