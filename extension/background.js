@@ -76,17 +76,23 @@ async function saveContactsToApi(contacts) {
 }
 
 /**
- * Wait for a tab to finish loading
+ * Wait for a tab to finish loading (with safety timeout)
  */
-function waitForTabLoad(tabId) {
+function waitForTabLoad(tabId, timeoutMs = 12000) {
   return new Promise((resolve) => {
+    let timer = null;
     function listener(updatedTabId, info) {
       if (updatedTabId === tabId && info.status === "complete") {
         chrome.tabs.onUpdated.removeListener(listener);
+        if (timer) clearTimeout(timer);
         resolve();
       }
     }
     chrome.tabs.onUpdated.addListener(listener);
+    timer = setTimeout(() => {
+      chrome.tabs.onUpdated.removeListener(listener);
+      resolve();
+    }, timeoutMs);
   });
 }
 
@@ -111,26 +117,33 @@ async function extractFromTab(tabId) {
 }
 
 /**
- * Main crawl step processor
+ * Main job-walker processor
+ * Steps through detected job posts one by one:
+ * "enter the job post, take the email, save it, then move to the next job post, then return to search"
  */
 async function runCrawlLoop() {
   while (crawlState.status === "running") {
     // Check if reached max pages or queue is empty
-    if (crawlState.pagesVisited >= crawlState.maxPages) {
+    if (crawlState.pagesVisited >= crawlState.maxPages || crawlState.queue.length === 0) {
       crawlState.status = "completed";
+      // Return back to the original search listing page
+      if (crawlState.seedUrl && crawlState.tabId) {
+        try {
+          await chrome.tabs.update(crawlState.tabId, { url: crawlState.seedUrl });
+          await waitForTabLoad(crawlState.tabId);
+        } catch (e) {}
+      }
       saveState();
       break;
     }
 
-    if (crawlState.queue.length === 0) {
-      crawlState.status = "completed";
-      saveState();
-      break;
-    }
+    // Pick next job post
+    const nextJob = crawlState.queue.shift();
+    const nextUrl = typeof nextJob === "object" ? nextJob.url : nextJob;
+    const titleHint = typeof nextJob === "object" ? nextJob.title : "Job Role";
+    const companyHint = typeof nextJob === "object" ? nextJob.company : null;
 
-    // Pick next URL
-    const nextUrl = crawlState.queue.shift();
-    if (crawlState.visited.includes(nextUrl)) {
+    if (!nextUrl || crawlState.visited.includes(nextUrl)) {
       continue;
     }
 
@@ -140,54 +153,52 @@ async function runCrawlLoop() {
     saveState();
 
     try {
-      // Navigate tab to nextUrl
+      // 1. Enter the job post
       await chrome.tabs.update(crawlState.tabId, { url: nextUrl });
       await waitForTabLoad(crawlState.tabId);
 
-      // Wait configured delay
+      // Wait configured delay for full rendering
       await delay(crawlState.delayMs);
 
       if (crawlState.status !== "running") {
         break;
       }
 
-      // Extract page details
+      // 2. Extract job details & direct apply email inside this job post
       const analysis = await extractFromTab(crawlState.tabId);
       if (analysis && analysis.success && analysis.data) {
         const pageData = analysis.data;
 
-        // If emails were found on page, format for API
+        // If emails were found in requirements / application section
         if (pageData.emails && pageData.emails.length > 0) {
-          const contactsToSave = pageData.emails.map(e => ({
-            company_name: pageData.company_name,
+          const contactsToSave = pageData.emails.map(firstEmail => ({
+            company_name: pageData.company_name || companyHint,
             contact_name: pageData.contact_name,
-            job_title: pageData.job_title,
-            email: e.email,
-            email_type: e.type,
-            source_url: pageData.source_url,
+            job_title: pageData.job_title || titleHint,
+            email: firstEmail.email,
+            email_type: firstEmail.type || "direct_apply",
+            source_url: pageData.source_url || nextUrl,
             source_domain: pageData.source_domain,
             verification_status: "unverified",
             reviewed: false,
-            notes: `Extracted via crawler from ${pageData.source_domain}`
+            notes: pageData.job_requirements
+              ? `Direct apply email in requirements: ${pageData.job_requirements.slice(0, 100)}...`
+              : `Extracted via Job-Walker from ${pageData.source_domain}`
           }));
 
           const res = await saveContactsToApi(contactsToSave);
-          crawlState.contactsCollected += (res.inserted || 0) + (res.updated || 0);
-          saveState();
-        }
-
-        // Add newly found same-origin links to queue
-        if (pageData.same_origin_links && Array.isArray(pageData.same_origin_links)) {
-          for (const link of pageData.same_origin_links) {
-            if (!crawlState.visited.includes(link) && !crawlState.queue.includes(link)) {
-              crawlState.queue.push(link);
-            }
+          // ONLY increment for genuinely new unique contacts inserted into the database!
+          if (res && res.inserted > 0) {
+            crawlState.contactsCollected += res.inserted;
+            saveState();
           }
-          saveState();
         }
       }
+
+      // Small pause before advancing to next job post
+      await delay(600);
     } catch (err) {
-      console.error(`Error crawling ${nextUrl}:`, err);
+      console.error(`Error walking job ${nextUrl}:`, err);
       crawlState.error = err.message;
       saveState();
     }
@@ -202,11 +213,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       status: "running",
       tabId: tabId,
       origin: origin,
+      seedUrl: seedUrl || "",
       queue: initialLinks ? [...initialLinks] : [],
       visited: seedUrl ? [seedUrl] : [],
-      maxPages: Number(maxPages) || 5,
+      maxPages: Number(maxPages) || 15,
       delayMs: Number(delayMs) || 2000,
-      pagesVisited: seedUrl ? 1 : 0,
+      pagesVisited: 0,
       contactsCollected: 0,
       currentUrl: seedUrl || "",
       error: null

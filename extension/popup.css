@@ -179,21 +179,37 @@ body {
 
 .nav-tab {
   flex: 1;
-  padding: 6px;
+  padding: 6px 4px;
   border: none;
   background: transparent;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   color: var(--text-muted);
   cursor: pointer;
   border-radius: 6px;
   transition: all 0.15s ease;
+  white-space: nowrap;
+  text-align: center;
 }
 
 .nav-tab.active {
   background: #ffffff;
   color: var(--primary);
   box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+.inpage-intro {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: var(--radius);
+  padding: 8px 10px;
+  margin-bottom: 10px;
+}
+
+.intro-text {
+  font-size: 11px;
+  color: #1e40af;
+  line-height: 1.4;
 }
 
 .tab-content {

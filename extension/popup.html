@@ -40,12 +40,71 @@
 
     <!-- Tab Navigation -->
     <div class="nav-tabs">
-      <button id="tabBtnAnalyze" class="nav-tab active">Current Page</button>
-      <button id="tabBtnCrawler" class="nav-tab">Bounded Crawler</button>
+      <button id="tabBtnInPage" class="nav-tab active">⚡ In-Page Scanner</button>
+      <button id="tabBtnAnalyze" class="nav-tab">🔍 Single Job</button>
+      <button id="tabBtnCrawler" class="nav-tab">🌐 Multi-Page</button>
     </div>
 
-    <!-- Section 1: Current Page Analysis -->
-    <div id="viewAnalyze" class="tab-content active">
+    <!-- Section 1: In-Page Job Scanner (Zero Page Reload) -->
+    <div id="viewInPage" class="tab-content active">
+      <div class="inpage-intro">
+        <p class="intro-text">
+          Inspects each job role on this page one by one, clicks "See more", searches for HR emails, saves matches to the database, and skips non-matches — <b>without changing pages</b>.
+        </p>
+      </div>
+
+      <div class="grid-2">
+        <div class="form-group">
+          <label for="inpageMaxJobs">Max Jobs to Inspect</label>
+          <input type="number" id="inpageMaxJobs" class="form-input" value="25" min="1" max="100">
+        </div>
+        <div class="form-group">
+          <label for="inpageDelay">Delay per Job (ms)</label>
+          <input type="number" id="inpageDelay" class="form-input" value="1200" min="600" max="5000" step="200">
+        </div>
+      </div>
+
+      <div class="crawler-status-box" style="margin-top: 10px;">
+        <div class="status-row">
+          <span class="status-label">Scanner Status:</span>
+          <span id="inpageStatusBadge" class="status-pill pill-idle">Idle</span>
+        </div>
+
+        <div class="progress-bar-container">
+          <div id="inpageProgressBar" class="progress-bar-fill" style="width: 0%"></div>
+        </div>
+
+        <div class="crawler-stats-grid">
+          <div class="stat-item">
+            <span class="stat-number" id="inpageStatInspected">0</span>
+            <span class="stat-label">Inspected</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-number" id="inpageStatSaved" style="color: #16a34a;">0</span>
+            <span class="stat-label">HR Saved</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-number" id="inpageStatRemaining">0</span>
+            <span class="stat-label">Remaining</span>
+          </div>
+        </div>
+
+        <div id="inpageStatusMsg" class="crawler-current-url">Ready. Click Start to inspect jobs on this page.</div>
+      </div>
+
+      <div class="crawler-controls" style="margin-top: 10px;">
+        <button id="btnStartInPage" class="btn btn-primary">▶ Start In-Page Scan</button>
+        <button id="btnPauseInPage" class="btn btn-warning" disabled>⏸ Pause</button>
+        <button id="btnResumeInPage" class="btn btn-secondary" disabled>⏯ Resume</button>
+        <button id="btnStopInPage" class="btn btn-danger" disabled>⏹ Stop</button>
+      </div>
+      <p class="crawler-tip" style="margin-top: 8px;">
+        ✨ Watch your page! Each job is highlighted, inspected, and tagged with a green badge when an email is saved.
+      </p>
+    </div>
+
+    <!-- Section 2: Current Single Page Analysis -->
+    <div id="viewAnalyze" class="tab-content">
       <div class="action-bar">
         <button id="btnAnalyze" class="btn btn-primary btn-full">
           <span class="btn-icon">🔍</span> Analyze Current Page
@@ -160,7 +219,7 @@
 
     <!-- Quick Footer Links -->
     <footer class="popup-footer">
-      <a href="http://127.0.0.1:8080" target="_blank" class="footer-link">📊 Dashboard</a>
+      <a href="http://127.0.0.1:8000/dashboard" target="_blank" class="footer-link">📊 Dashboard</a>
       <a href="http://127.0.0.1:8000/api/export-leads.csv" target="_blank" class="footer-link">📥 Export Leads CSV</a>
       <a href="http://127.0.0.1:8000/docs" target="_blank" class="footer-link">📚 API Docs</a>
     </footer>

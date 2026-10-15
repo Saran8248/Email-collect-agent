@@ -1,10 +1,12 @@
+import os
 import io
 import csv
 import logging
 from typing import Optional, List
 from fastapi import FastAPI, Depends, HTTPException, Query, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import Response, StreamingResponse
+from fastapi.responses import Response, StreamingResponse, RedirectResponse
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 from sqlalchemy import func, or_, desc, asc
 
@@ -50,7 +52,7 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# Enable CORS for Chrome Extension, Dashboard (port 8080), and local origins
+# Enable CORS for Chrome Extension, Dashboard (port 8080/8085), and local origins
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -58,6 +60,15 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Mount Dashboard static files directly so it can be accessed on http://127.0.0.1:8000/dashboard
+dashboard_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "dashboard"))
+if os.path.isdir(dashboard_dir):
+    app.mount("/dashboard", StaticFiles(directory=dashboard_dir, html=True), name="dashboard")
+
+@app.get("/", include_in_schema=False)
+def root():
+    return RedirectResponse(url="/dashboard")
 
 @app.get("/health", response_model=HealthResponse, tags=["Health"])
 def health_check():
@@ -372,8 +383,8 @@ def export_contacts_csv(db: Session = Depends(get_db)):
     output.close()
 
     return Response(
-        content=csv_content,
-        media_type="text/csv",
+        content=csv_content.encode("utf-8-sig"),
+        media_type="text/csv; charset=utf-8",
         headers={
             "Content-Disposition": "attachment; filename=hr_contacts_export.csv",
             "Cache-Control": "no-cache"
@@ -417,8 +428,8 @@ def export_leads_csv(db: Session = Depends(get_db)):
     output.close()
 
     return Response(
-        content=csv_content,
-        media_type="text/csv",
+        content=csv_content.encode("utf-8-sig"),
+        media_type="text/csv; charset=utf-8",
         headers={
             "Content-Disposition": "attachment; filename=hr_leads_export.csv",
             "Cache-Control": "no-cache"

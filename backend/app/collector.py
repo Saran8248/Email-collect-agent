@@ -177,4 +177,13 @@ def clean_contact_name(name_raw: Optional[str]) -> Optional[str]:
     # Remove excessive whitespace
     cleaned = re.sub(r"\s+", " ", cleaned).strip(" ,;:-|")
     
-    return cleaned if len(cleaned) >= 2 else None
+    # Filter out generic dictionary words mistakenly matched as person names
+    invalid_words = {
+        "details", "contact", "us", "info", "information", "here", "now",
+        "recruiter", "hr", "email", "job", "career", "careers", "apply",
+        "support", "team", "person", "name", "hiring", "manager", "hiring manager"
+    }
+    if cleaned.lower() in invalid_words or len(cleaned) < 3:
+        return None
+        
+    return cleaned

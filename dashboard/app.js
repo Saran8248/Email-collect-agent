@@ -4,7 +4,9 @@
  * metric cards, pagination, and backend sync.
  */
 
-const API_BASE = "http://127.0.0.1:8000";
+const API_BASE = (window.location.port === "8000" || window.location.hostname === "127.0.0.1" && window.location.port === "8000")
+  ? window.location.origin
+  : "http://127.0.0.1:8000";
 
 let currentPage = 1;
 let pageSize = 25;

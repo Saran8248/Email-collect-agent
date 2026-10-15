@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "HR Contact Collection Agent",
   "version": "1.0.0",
-  "description": "Collects publicly displayed company and HR contact details from permitted German job portals, deduplicates records, and syncs to backend.",
+  "description": "Collects publicly displayed company and HR contact details from job portals (Randstad, StepStone, Indeed, Naukri, Monster, etc.), deduplicates records, and syncs to backend.",
   "permissions": [
     "activeTab",
     "storage",
@@ -11,7 +11,8 @@
   ],
   "host_permissions": [
     "http://127.0.0.1:8000/*",
-    "http://localhost:8000/*"
+    "http://localhost:8000/*",
+    "*://*/*"
   ],
   "action": {
     "default_popup": "popup.html",
